@@ -19,6 +19,10 @@ A five-step guided activity built around the initial state
 
 It is a single self-contained HTML file with no libraries. Download it and open it in any browser, or adapt it for your own course. Student responses stay in their browser; "Copy my responses" puts them on the clipboard.
 
+## From a past DICE
+
+[Standard Model force map](https://mpkuchera.github.io/standard-model-force-map/): an interactive map of the fundamental particles and the forces that act on them, built with AI at an earlier DICE workshop.
+
 ## License
 
 The square well activity is dedicated to the public domain under [CC0 1.0](LICENSE). You may copy, modify and reuse it for any purpose, without asking.
