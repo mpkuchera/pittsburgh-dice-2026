@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Square Well Inquiry</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column on graph paper; a numbered stepper (the order is the inquiry) over one panel per step. */
+:root{
+  --paper:#f6f7fb; --grid:#e4e8f1; --surface:#ffffff; --ink:#1c2333; --muted:#596379;
+  --line:#cdd3e0; --psi:#3d3fb8; --prob:#c27b12; --probfill:rgba(232,160,40,.28);
+  --im:#8a3fa8; --wall:#dfe3ee; --good:#1d7548; --bad:#b0261c; --chip:#eceefa;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11141c; --grid:#1b202d; --surface:#181c27; --ink:#e7eaf3; --muted:#9ba4b9;
+    --line:#2d3446; --psi:#9497ff; --prob:#f1b34c; --probfill:rgba(241,179,76,.22);
+    --im:#d79cf2; --wall:#252b3b; --good:#62d39a; --bad:#ff8d82; --chip:#232842; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11141c; --grid:#1b202d; --surface:#181c27; --ink:#e7eaf3; --muted:#9ba4b9;
+  --line:#2d3446; --psi:#9497ff; --prob:#f1b34c; --probfill:rgba(241,179,76,.22);
+  --im:#d79cf2; --wall:#252b3b; --good:#62d39a; --bad:#ff8d82; --chip:#232842; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  margin:0;color:var(--ink);background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;font:17px/1.55 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:860px;margin:0 auto;padding-block:22px 56px}
+h1,h2{font-family:var(--serif);line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(1.8rem,5.5vw,2.4rem);margin:.1em 0 .2em}
+h2{font-size:1.35rem;margin:0 0 .4em}
+.eyebrow{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.lede{color:var(--muted);margin:0;max-width:64ch}
+.eq{font-family:var(--serif);font-style:italic}
+.formula{display:block;font-family:var(--serif);font-style:italic;font-size:1.08rem;margin:.5em 0;padding:8px 12px;background:var(--chip);border-radius:8px;overflow-x:auto;white-space:nowrap}
+nav.steps{display:flex;gap:4px;overflow-x:auto;margin:18px 0 0;border-bottom:2px solid var(--line);scrollbar-width:none}
+nav.steps::-webkit-scrollbar{display:none}
+nav.steps button{flex:0 0 auto;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;padding:10px 12px;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer;border-radius:6px 6px 0 0;display:flex;gap:7px;align-items:center}
+nav.steps button .num{display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;border:1.5px solid currentColor;font-size:.8rem;font-variant-numeric:tabular-nums}
+nav.steps button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--psi)}
+nav.steps button.done .num{background:var(--psi);border-color:var(--psi);color:var(--surface)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--psi);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:18px 18px 22px;display:grid;gap:14px}
+.panel > *{min-width:0}
+.panel p{margin:0;max-width:68ch}
+.plotbox{overflow-x:auto}
+svg.plot{width:100%;height:auto;display:block;min-width:300px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.88rem;color:var(--muted)}
+.legend i{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.btn{font:inherit;font-size:.93rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer}
+.btn.primary{background:var(--psi);border-color:var(--psi);color:var(--surface);font-weight:700}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button{font:inherit;font-size:.93rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 11px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--psi);border-color:var(--psi);color:var(--surface)}
+.field{display:grid;gap:4px}
+.field label,.lbl{font-weight:700}
+.field input[type=text]{font:inherit;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:100%;max-width:200px}
+textarea{font:inherit;font-size:.95rem;width:100%;min-height:4.2em;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);resize:vertical}
+input[type=range]{width:100%;accent-color:var(--psi)}
+output{color:var(--muted);font-weight:400;margin-left:6px;font-variant-numeric:tabular-nums}
+.ask{border-left:3px solid var(--prob);padding:10px 14px;background:var(--chip);border-radius:0 8px 8px 0;display:grid;gap:10px}
+.ask .q{font-weight:700}
+.opts{display:grid;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.opt input{margin-top:.3em;accent-color:var(--psi)}
+.opt:has(input:checked){border-color:var(--psi)}
+.stats{display:flex;flex-wrap:wrap;gap:10px 22px;padding:12px 14px;background:var(--chip);border-radius:10px}
+.stats div{min-width:110px}
+.stats b{display:block;font-size:1.15rem;font-family:var(--serif);font-variant-numeric:tabular-nums}
+.stats span{color:var(--muted);font-size:.85rem}
+.fb{min-height:1.4em}
+.ok{color:var(--good);font-weight:700}.no{color:var(--bad);font-weight:700}
+.mark{font-weight:700;margin-left:6px}
+details summary{cursor:pointer;font-weight:700}
+details .body{padding:8px 0 0 2px;display:grid;gap:8px}
+.reveal{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
+.nav-foot{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.small{font-size:.88rem;color:var(--muted)}
+footer{margin-top:18px;display:grid;gap:10px;font-size:.9rem;color:var(--muted)}
+footer .reveal{background:var(--surface)}
+#copyFallback{min-height:9em;font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Quantum mechanics · infinite square well</p>
+    <h1>From your cₙ to the motion</h1>
+    <p class="formula" style="margin:6px 0 8px">ψ(x, 0) = A sin(πx/L) [1 + cos(πx/L)],  0 &lt; x &lt; L</p>
+    <p class="lede">Bring your derivation. Check your coefficients, predict what the probability density will do, then watch it and measure the energy. Nothing is locked; your answers stay in this browser.</p>
+  </header>
+
+  <nav class="steps" role="tablist" aria-label="Steps">
+    <button role="tab" aria-selected="true" aria-controls="coefficients" id="t-coefficients"><span class="num">1</span>Coefficients</button>
+    <button role="tab" aria-selected="false" aria-controls="predict" id="t-predict"><span class="num">2</span>Predict</button>
+    <button role="tab" aria-selected="false" aria-controls="watch" id="t-watch"><span class="num">3</span>Watch</button>
+    <button role="tab" aria-selected="false" aria-controls="measure" id="t-measure"><span class="num">4</span>Measure</button>
+    <button role="tab" aria-selected="false" aria-controls="explore" id="t-explore"><span class="num">5</span>Explore</button>
+  </nav>
+
+  <!-- 1 COEFFICIENTS -->
+  <section class="panel" id="coefficients" role="tabpanel" aria-labelledby="t-coefficients">
+    <h2>Check your coefficients</h2>
+    <p>With φₙ(x) = √(2/L) sin(nπx/L), the general solution is</p>
+    <span class="formula">ψ(x, t) = Σ cₙ φₙ(x) e^(−iEₙt/ħ),   cₙ = ∫₀ᴸ φₙ(x) ψ(x, 0) dx</span>
+    <p>Enter c₁ and c₂ from your work. The dashed curve rebuilds ψ(x, 0) from your numbers as you type.</p>
+    <div class="row" style="gap:18px;align-items:flex-end">
+      <div class="field"><label for="in-c1">c₁</label><input type="text" id="in-c1" data-r="c₁" inputmode="text" placeholder="e.g. 1/sqrt(3)" autocomplete="off"></div>
+      <div class="field"><label for="in-c2">c₂</label><input type="text" id="in-c2" data-r="c₂" inputmode="text" placeholder="e.g. 0.5" autocomplete="off"></div>
+      <button class="btn primary" id="check12">Check</button>
+      <button class="btn" id="hint12">Hint</button>
+    </div>
+    <p class="fb" id="fb12" aria-live="polite"></p>
+    <div id="hints12" class="small" style="display:grid;gap:4px"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--ink)"></i>ψ(x, 0), the given state</span>
+      <span><i style="border-color:var(--psi);border-top-style:dashed"></i>c₁φ₁ + c₂φ₂ from your numbers</span>
+    </div>
+    <div class="plotbox"><svg class="plot" id="p1" viewBox="0 0 600 250" role="img" aria-label="The given initial state and the rebuild from your coefficients"></svg></div>
+    <div class="stats">
+      <div><b id="s-sum">—</b><span>|c₁|² + |c₂|² (must be 1)</span></div>
+      <div><b id="s-err">—</b><span>largest mismatch with ψ(x, 0), in L<sup>−1/2</sup></span></div>
+    </div>
+    <details>
+      <summary>Why are c₃, c₄, … all zero?</summary>
+      <div class="body"><p>With sin θ cos θ = ½ sin 2θ, ψ(x, 0) = A sin(πx/L) + (A/2) sin(2πx/L). That is already a sum of φ₁ and φ₂, and orthogonality makes every other overlap vanish.</p></div>
+    </details>
+    <div class="nav-foot"><span></span><button class="btn primary" data-go="predict">Next: predict →</button></div>
+  </section>
+
+  <!-- 2 PREDICT -->
+  <section class="panel" id="predict" role="tabpanel" aria-labelledby="t-predict" hidden>
+    <h2>Before you press play</h2>
+    <p>Write your ψ(x, t) on paper with both sine functions explicit, then compare.</p>
+    <details>
+      <summary>Show the assembled ψ(x, t)</summary>
+      <div class="body">
+        <span class="formula">ψ(x, t) = √(2/L) [ (2/√5) sin(πx/L) e^(−iE₁t/ħ) + (1/√5) sin(2πx/L) e^(−iE₂t/ħ) ]</span>
+        <p>At t = 0 the two terms add on the left half of the well and partly cancel on the right. Their phases then advance at different rates.</p>
+      </div>
+    </details>
+    <div class="legend"><span><i style="border-color:var(--prob)"></i>|ψ(x, 0)|², in units of 1/L</span></div>
+    <div class="plotbox"><svg class="plot" id="p2" viewBox="0 0 600 200" role="img" aria-label="Initial probability density"></svg></div>
+    <div class="ask">
+      <p class="q">1. What will the probability density do?</p>
+      <div class="opts" role="radiogroup" aria-label="Prediction for the density">
+        <label class="opt"><input type="radio" name="pred" value="a" data-r="Prediction"><span>Stay fixed. Each term is a stationary state.</span></label>
+        <label class="opt"><input type="radio" name="pred" value="b" data-r="Prediction"><span>Slosh from one side to the other and come back, over and over.</span></label>
+        <label class="opt"><input type="radio" name="pred" value="c" data-r="Prediction"><span>Spread out and flatten for good.</span></label>
+        <label class="opt"><input type="radio" name="pred" value="d" data-r="Prediction"><span>Slowly lose total probability.</span></label>
+      </div>
+      <div class="field"><label for="in-period">2. If it repeats, after how long? In units of ħ/E₁.</label>
+        <input type="text" id="in-period" data-r="Predicted period (ħ/E₁)" placeholder="e.g. pi/2" autocomplete="off"></div>
+      <div class="field"><label for="in-why">3. What in your ψ(x, t) supports this?</label>
+        <textarea id="in-why" data-r="Why (prediction)"></textarea></div>
+    </div>
+    <div class="nav-foot"><button class="btn" data-go="coefficients">← Coefficients</button><button class="btn primary" data-go="watch">Record and watch →</button></div>
+  </section>
+
+  <!-- 3 WATCH -->
+  <section class="panel" id="watch" role="tabpanel" aria-labelledby="t-watch" hidden>
+    <h2>Watch the interference</h2>
+    <div class="legend">
+      <span><i style="border-color:var(--prob)"></i>|ψ|² (1/L)</span>
+      <span><i style="border-color:var(--muted);border-top-style:dashed"></i>|ψ|² at t = 0</span>
+      <span><i style="border-color:var(--psi)"></i>Re ψ (L<sup>−1/2</sup>)</span>
+      <span><i style="border-color:var(--im);border-top-style:dashed"></i>Im ψ</span>
+    </div>
+    <div class="plotbox"><svg class="plot" id="p3" viewBox="0 0 600 290" role="img" aria-label="Probability density and wavefunction at time t"></svg></div>
+    <div class="grid2">
+      <div class="field">
+        <label for="t3">Time <output id="t3out">t = 0</output></label>
+        <input type="range" id="t3" min="0" max="6.2832" step="0.001" value="0">
+        <div class="row">
+          <button class="btn primary" id="play3">▶ Play</button>
+          <button class="btn" id="quarter3">+ ¼ period</button>
+          <button class="btn" id="reset3">t = 0</button>
+        </div>
+      </div>
+      <div class="field"><span class="lbl" id="show3lbl">Show</span>
+        <div class="seg" role="group" aria-labelledby="show3lbl" id="show3">
+          <button aria-pressed="true" data-v="re">Re ψ</button>
+          <button aria-pressed="false" data-v="im">Im ψ</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats">
+      <div><b id="w-t">0</b><span>t in units of ħ/E₁</span></div>
+      <div><b id="w-fs">0</b><span>t for an electron, L = 1 nm</span></div>
+      <div><b>1.6 E₁</b><span>⟨H⟩ (never changes)</span></div>
+    </div>
+    <div class="ask">
+      <p class="q">Use “+ ¼ period” to stop at t = T/4 and T/2.</p>
+      <p>At T/4 the density is symmetric about L/2. Which term of |ψ|² vanishes there? At T/2 it is the mirror image of t = 0. Why? (How does φ₁φ₂ behave under x → L − x?)</p>
+      <textarea id="in-obs" data-r="What I saw at T/4 and T/2" aria-label="What I saw at T/4 and T/2"></textarea>
+      <div class="row"><button class="btn" id="compare3">Compare with my prediction</button></div>
+      <div class="reveal" id="cmp3" hidden></div>
+    </div>
+    <details>
+      <summary>Show the interference term</summary>
+      <div class="body">
+        <span class="formula">|ψ|² = c₁²φ₁² + c₂²φ₂² + 2c₁c₂ φ₁φ₂ cos[(E₂ − E₁)t/ħ]</span>
+        <p>Only the cross term depends on time, and it integrates to zero, so total probability stays 1. The density repeats after T = 2πħ/(E₂ − E₁) = (2π/3) ħ/E₁. ψ itself only returns after 3T, when both phases come back together.</p>
+      </div>
+    </details>
+    <div class="nav-foot"><button class="btn" data-go="predict">← Predict</button><button class="btn primary" data-go="measure">Next: measure →</button></div>
+  </section>
+
+  <!-- 4 MEASURE -->
+  <section class="panel" id="measure" role="tabpanel" aria-labelledby="t-measure" hidden>
+    <h2>Measure the energy</h2>
+    <div class="ask">
+      <p class="q">Predict first.</p>
+      <div class="field"><label for="in-pe2">1. What fraction of measurements give E₂?</label>
+        <input type="text" id="in-pe2" data-r="Predicted P(E₂)" placeholder="e.g. 1/3" autocomplete="off"></div>
+      <p>2. ⟨H⟩ = 1.6 E₁. Can a single measurement return 1.6 E₁?</p>
+      <div class="opts" role="radiogroup" aria-label="Can one measurement give the expectation value">
+        <label class="opt"><input type="radio" name="single" value="yes" data-r="One measurement gives 1.6 E₁?"><span>Yes, sometimes.</span></label>
+        <label class="opt"><input type="radio" name="single" value="no" data-r="One measurement gives 1.6 E₁?"><span>No, never.</span></label>
+      </div>
+    </div>
+    <p>Each measurement uses a freshly prepared copy of ψ(x, 0). The result is one of the Eₙ, and the particle is left in φₙ.</p>
+    <div class="row">
+      <button class="btn primary" id="m1">Measure once</button>
+      <button class="btn" id="m10">× 10</button>
+      <button class="btn" id="m100">× 100</button>
+      <button class="btn" id="m1000">× 1000</button>
+      <button class="btn" id="mclear">Clear</button>
+    </div>
+    <p class="fb" id="mlast" aria-live="polite"></p>
+    <div class="plotbox"><svg class="plot" id="p4" viewBox="0 0 600 210" role="img" aria-label="Histogram of energy measurement results"></svg></div>
+    <div class="stats">
+      <div><b id="m-n">0</b><span>measurements</span></div>
+      <div><b id="m-avg">—</b><span>average result</span></div>
+      <div><b>1.600 E₁</b><span>⟨H⟩ = Σ |cₙ|² Eₙ</span></div>
+    </div>
+    <div class="row"><button class="btn" id="check4">Check my predictions</button></div>
+    <div class="reveal" id="cmp4" hidden></div>
+    <div class="nav-foot"><button class="btn" data-go="watch">← Watch</button><button class="btn primary" data-go="explore">Next: explore →</button></div>
+  </section>
+
+  <!-- 5 EXPLORE -->
+  <section class="panel" id="explore" role="tabpanel" aria-labelledby="t-explore" hidden>
+    <h2>Change the state</h2>
+    <div class="field"><span class="lbl" id="st5lbl">Initial state</span>
+      <div class="seg" role="group" aria-labelledby="st5lbl" id="st5">
+        <button aria-pressed="true" data-v="cls">Class state</button>
+        <button aria-pressed="false" data-v="two">Two states, your mix</button>
+        <button aria-pressed="false" data-v="par">Ax(L − x)</button>
+      </div>
+    </div>
+    <div class="grid2" id="two5" hidden>
+      <div class="field"><label for="a5">|c₂| <output id="a5out">0.447</output></label><input type="range" id="a5" min="0" max="1" step="0.001" value="0.4472"></div>
+      <div class="field"><label for="d5">Relative phase δ, c₂ = |c₂|e^(iδ) <output id="d5out">0°</output></label><input type="range" id="d5" min="0" max="360" step="1" value="0"></div>
+    </div>
+    <p class="formula" id="eq5">ψ(x, 0) = (2/√5) φ₁ + (1/√5) φ₂</p>
+    <div class="plotbox"><svg class="plot" id="p5" viewBox="0 0 600 290" role="img" aria-label="Probability density for the chosen state"></svg></div>
+    <div class="grid2">
+      <div class="field">
+        <label for="t5">Time <output id="t5out">t = 0</output></label>
+        <input type="range" id="t5" min="0" max="6.2832" step="0.001" value="0">
+        <div class="row">
+          <button class="btn primary" id="play5">▶ Play</button>
+          <button class="btn" id="reset5">t = 0</button>
+          <button class="btn" id="rev5">t = 2πħ/E₁</button>
+        </div>
+      </div>
+      <div class="field"><span class="lbl" id="show5lbl">Show</span>
+        <div class="seg" role="group" aria-labelledby="show5lbl" id="show5">
+          <button aria-pressed="true" data-v="re">Re ψ</button>
+          <button aria-pressed="false" data-v="im">Im ψ</button>
+        </div>
+      </div>
+    </div>
+    <p class="lbl">Energy probabilities |cₙ|² (fixed in time)</p>
+    <div class="plotbox"><svg class="plot" id="b5" viewBox="0 0 600 150" role="img" aria-label="Bar chart of energy probabilities"></svg></div>
+    <div class="stats">
+      <div><b id="e-h">—</b><span>⟨H⟩ / E₁</span></div>
+    </div>
+    <div class="ask">
+      <p class="q">Questions to try</p>
+      <p>• Two states: move |c₂| to 0 or 1. Re ψ keeps changing, so why does the density stop moving?</p>
+      <p>• Two states: change δ. What does the relative phase change, and what does it leave alone?</p>
+      <p>• Ax(L − x) uses only odd n. Find the first time its density returns to its starting shape. Why is that so much sooner than 2πħ/E₁?</p>
+      <p>• Any state: press “t = 2πħ/E₁”. Every state returns exactly. Why must that happen in this well?</p>
+      <textarea id="in-explore" data-r="Explore: what I found" aria-label="What I found"></textarea>
+    </div>
+    <div class="nav-foot"><button class="btn" data-go="measure">← Measure</button><button class="btn primary" id="copyBtn">Copy my responses</button></div>
+    <textarea id="copyFallback" hidden readonly aria-label="Your responses as text"></textarea>
+  </section>
+
+  <footer>
+    <details class="reveal">
+      <summary>What this page assumes and computes</summary>
+      <div class="body">
+        <p>A nonrelativistic particle, perfectly rigid walls and undisturbed time evolution. The density is a probability distribution, not a trajectory.</p>
+        <p>Every curve is an exact sum of energy eigenstates, each with its e^(−iEₙt/ħ). Nothing integrates the Schrödinger equation. For Ax(L − x) the page uses cₙ = 8√15/(nπ)³ for odd n, summed to n = 39.</p>
+        <p>Units: x in L, ψ in L<sup>−1/2</sup>, |ψ|² in 1/L, t in ħ/E₁. For an electron in a 1 nm well, E₁ = 0.376 eV and ħ/E₁ = 1.75 fs.</p>
+      </div>
+    </details>
+  </footer>
+</div>
+
+<script>
+const PI=Math.PI, M=300, NMAX=39, NS='http://www.w3.org/2000/svg';
+const FS=1.7504;                     // ħ/E₁ in fs for an electron in a 1 nm well
+const C1=2/Math.sqrt(5), C2=1/Math.sqrt(5), A0=Math.sqrt(8/5), TD=2*PI/3; // TD: density period in ħ/E₁
+const U=Array.from({length:M+1},(_,i)=>i/M);
+const PHI=[null];for(let n=1;n<=NMAX;n++)PHI.push(U.map(u=>Math.SQRT2*Math.sin(n*PI*u)));
+const TARGET=U.map(u=>A0*Math.sin(PI*u)*(1+Math.cos(PI*u)));
+const CLASS=[{n:1,re:C1,im:0},{n:2,re:C2,im:0}];
+const PAR=(()=>{const cs=[];let s=0;for(let n=1;n<=NMAX;n+=2){const v=8*Math.sqrt(15)/(n*PI)**3;cs.push({n,re:v,im:0});s+=v*v}
+  return cs.map(c=>({n:c.n,re:c.re/Math.sqrt(s),im:0}))})();
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- physics ---------- */
+function evolve(cs,tau){
+  const re=new Array(M+1).fill(0), im=new Array(M+1).fill(0);
+  for(const c of cs){const ph=-c.n*c.n*tau, co=Math.cos(ph), si=Math.sin(ph), r=c.re*co-c.im*si, i=c.re*si+c.im*co, p=PHI[c.n];
+    for(let k=0;k<=M;k++){re[k]+=r*p[k];im[k]+=i*p[k]}}
+  return {re,im,rho:re.map((r,k)=>r*r+im[k]*im[k])};
+}
+const Hexp=cs=>cs.reduce((s,c)=>s+(c.re*c.re+c.im*c.im)*c.n*c.n,0);
+
+/* ---------- drawing ---------- */
+const X0=50,X1=570, Xu=u=>X0+(X1-X0)*u;
+const scaler=(lo,hi,top,bot)=>v=>bot-(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*(bot-top);
+function el(svg,tag,attrs,style){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(style)e.setAttribute('style',style);svg.appendChild(e);return e}
+function txt(svg,x,y,s,style,anchor){const t=el(svg,'text',{x,y,'text-anchor':anchor||'middle','font-size':13},'fill:var(--muted);'+(style||''));t.textContent=s;return t}
+function line(ys,Y){let d='';for(let i=0;i<=M;i+=2)d+=(i?' L':'M')+Xu(U[i]).toFixed(1)+' '+Y(ys[i]).toFixed(1);return d}
+function area(ys,Y){let d='M'+Xu(0)+' '+Y(0);for(let i=0;i<=M;i+=2)d+=' L'+Xu(U[i]).toFixed(1)+' '+Y(ys[i]).toFixed(1);return d+' L'+Xu(1)+' '+Y(0)+' Z'}
+function well(svg,Y,top,bot){
+  el(svg,'rect',{x:X0-22,y:top-6,width:22,height:bot-top+10},'fill:var(--wall)');
+  el(svg,'rect',{x:X1,y:top-6,width:22,height:bot-top+10},'fill:var(--wall)');
+  el(svg,'line',{x1:X0,y1:top-6,x2:X0,y2:bot+4},'stroke:var(--muted);stroke-width:2');
+  el(svg,'line',{x1:X1,y1:top-6,x2:X1,y2:bot+4},'stroke:var(--muted);stroke-width:2');
+  el(svg,'line',{x1:X0,y1:Y(0),x2:X1,y2:Y(0)},'stroke:var(--line);stroke-width:1.5');
+  el(svg,'line',{x1:Xu(.5),y1:top,x2:Xu(.5),y2:bot},'stroke:var(--line);stroke-width:1;stroke-dasharray:3 5');
+  txt(svg,X0,bot+20,'0');txt(svg,Xu(.5),bot+20,'L/2');txt(svg,X1,bot+20,'L');
+}
+const fmt=(v,d=3)=>(Math.abs(v)<5e-4?0:v).toFixed(d);
+
+/* ---------- input parsing ---------- */
+function parseExpr(s){
+  let t=(s||'').trim().toLowerCase().replace(/π/g,'pi').replace(/√/g,'sqrt').replace(/\^/g,'**').replace(/,/g,'.');
+  if(!t)return NaN;
+  t=t.replace(/sqrt\s*([0-9.]+)/g,'sqrt($1)').replace(/([0-9.)])\s*(pi|sqrt|\()/g,'$1*$2').replace(/(pi)\s*([0-9.(]|sqrt)/g,'$1*$2');
+  if(t.replace(/sqrt|pi|\*\*|[0-9.+\-*/()\s]/g,'').length)return NaN;
+  t=t.replace(/sqrt/g,'Math.sqrt').replace(/pi/g,'Math.PI');
+  try{const v=Function('"use strict";return ('+t+')')();return typeof v==='number'&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+const near=(v,a,tol=0.01)=>a===0?Math.abs(v)<1e-3:Math.abs(v-a)<=tol*Math.abs(a);
+
+/* ---------- responses (kept in this browser only) ---------- */
+const R={};
+function store(){try{localStorage.setItem('swi-responses',JSON.stringify(R))}catch(e){}}
+function restore(){let saved={};try{saved=JSON.parse(localStorage.getItem('swi-responses')||'{}')||{}}catch(e){}
+  document.querySelectorAll('[data-r]').forEach(e=>{const k=e.dataset.r, v=saved[k];if(v==null)return;
+    if(e.type==='radio'){if(e.value===v)e.checked=true}else e.value=v;R[k]=v});
+}
+document.querySelectorAll('[data-r]').forEach(e=>e.addEventListener(e.type==='radio'?'change':'input',()=>{R[e.dataset.r]=e.value;store()}));
+
+/* ---------- step 1 ---------- */
+const in1=document.getElementById('in-c1'), in2=document.getElementById('in-c2');
+function draw1(){
+  const svg=document.getElementById('p1');svg.innerHTML='';
+  const Y=scaler(-1.1,2.0,16,220);well(svg,Y,16,220);
+  const a=parseExpr(in1.value), b=parseExpr(in2.value);
+  el(svg,'path',{d:line(TARGET,Y)},'fill:none;stroke:var(--ink);stroke-width:3.2;stroke-linecap:round');
+  const sum=document.getElementById('s-sum'), err=document.getElementById('s-err');
+  if(isNaN(a)&&isNaN(b)){sum.textContent='—';err.textContent='—';return}
+  const ca=isNaN(a)?0:a, cb=isNaN(b)?0:b;
+  const rb=U.map((_,i)=>ca*PHI[1][i]+cb*PHI[2][i]);
+  el(svg,'path',{d:line(rb,Y)},'fill:none;stroke:var(--psi);stroke-width:2.6;stroke-dasharray:7 5');
+  sum.textContent=fmt(ca*ca+cb*cb,4);
+  err.textContent=fmt(Math.max(...rb.map((v,i)=>Math.abs(v-TARGET[i]))),3);
+}
+function check1(){
+  const a=parseExpr(in1.value), b=parseExpr(in2.value), fb=document.getElementById('fb12');
+  if(isNaN(a)||isNaN(b)){fb.innerHTML='<span class="no">Enter both numbers.</span> Decimals or expressions like 2/sqrt(5) work.';return}
+  const ok1=near(a,C1), ok2=near(b,C2);let msg;
+  if(ok1&&ok2){msg='<span class="ok">Both right.</span> Your rebuild sits on ψ(x, 0) and the probabilities add to 1.';done('coefficients')}
+  else if(near(Math.abs(a),C1)&&near(Math.abs(b),C2))msg='<span class="no">Check the signs.</span> The sizes are right, but A &gt; 0 and both terms are positive at t = 0. Look at which side of the well your dashed curve leans toward.';
+  else if(near(Math.abs(a),C2)&&near(Math.abs(b),C1))msg='<span class="no">Swapped?</span> Which term carries the factor ½?';
+  else if(near(a,A0)||near(b,A0/2))msg='<span class="no">That is the sine’s amplitude, not cₙ.</span> φₙ already carries √(2/L), so cₙ = (amplitude) × √(L/2).';
+  else if(b!==0&&near(a/b,2))msg='<span class="no">The ratio c₁/c₂ = 2 is right.</span> Now normalize: |c₁|² + |c₂|² = 1.';
+  else msg='<span class="no">Not yet.</span> Compare the dashed curve with the solid one, then try a hint.';
+  fb.innerHTML=msg+' <span class="mark">c₁ '+(ok1?'✓':'✗')+'  c₂ '+(ok2?'✓':'✗')+'</span>';
+}
+const HINTS=['Use sin θ cos θ = ½ sin 2θ with θ = πx/L.','Then ψ(x, 0) = A sin(πx/L) + (A/2) sin(2πx/L). Match each term to φₙ = √(2/L) sin(nπx/L).','So c₁ = A√(L/2) and c₂ = c₁/2. Normalization |c₁|² + |c₂|² = 1 fixes A.'];
+let hintN=0;
+document.getElementById('hint12').onclick=()=>{if(hintN>=HINTS.length)return;const p=document.createElement('p');p.textContent='Hint '+(hintN+1)+': '+HINTS[hintN++];document.getElementById('hints12').appendChild(p)};
+document.getElementById('check12').onclick=check1;
+[in1,in2].forEach(e=>{e.addEventListener('input',draw1);e.addEventListener('keydown',ev=>{if(ev.key==='Enter')check1()})});
+
+/* ---------- step 2 ---------- */
+function draw2(){
+  const svg=document.getElementById('p2');svg.innerHTML='';
+  const Y=scaler(0,3.3,14,170);well(svg,Y,14,170);
+  el(svg,'path',{d:area(evolve(CLASS,0).rho,Y)},'fill:var(--probfill);stroke:var(--prob);stroke-width:2.5');
+}
+
+/* ---------- animated well (steps 3 and 5) ---------- */
+function Movie(o){
+  const m={tau:0,playing:false,show:{re:true,im:false},cs:o.cs,ghost:null,...o};
+  m.draw=()=>{
+    const svg=m.svg;svg.innerHTML='';
+    const top=16,bot=262, mid=(top+bot)/2;
+    const Ya=scaler(-1.85,1.85,top,bot), Yp=v=>mid-(v/3.4)*(mid-top);
+    const Yp0=v=>Yp(Math.min(v,3.4));
+    well(svg,Ya,top,bot);
+    const s=evolve(m.cs,m.tau);
+    el(svg,'path',{d:area(s.rho,Yp0)},'fill:var(--probfill);stroke:var(--prob);stroke-width:2.5');
+    if(m.ghost)el(svg,'path',{d:line(m.ghost,Yp0)},'fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:5 5');
+    if(m.show.im)el(svg,'path',{d:line(s.im,Ya)},'fill:none;stroke:var(--im);stroke-width:2.2;stroke-dasharray:7 5');
+    if(m.show.re)el(svg,'path',{d:line(s.re,Ya)},'fill:none;stroke:var(--psi);stroke-width:2.6');
+    m.slider.value=m.tau;
+    m.out.textContent='t = '+m.tau.toFixed(2)+' ħ/E₁';
+    if(m.after)m.after();
+  };
+  m.tick=(ts)=>{if(!m.playing)return;const dt=m.last?Math.min(ts-m.last,50):16;m.last=ts;
+    m.tau=(m.tau+dt/1000*TD/(reduced?12:4))%(2*PI);m.draw();requestAnimationFrame(m.tick)};
+  m.setPlay=(on)=>{m.playing=on;m.play.textContent=on?'⏸ Pause':'▶ Play';if(on){m.last=0;requestAnimationFrame(m.tick)}};
+  m.play.onclick=()=>m.setPlay(!m.playing);
+  m.slider.addEventListener('input',()=>{m.tau=+m.slider.value;m.draw()});
+  seg(m.showId,(v,on)=>{m.show[v]=on;m.draw()},true);
+  return m;
+}
+function seg(id,cb,multi){
+  const bs=[...document.querySelectorAll('#'+id+' button[data-v]')];
+  bs.forEach(b=>b.addEventListener('click',()=>{
+    if(multi)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');else bs.forEach(x=>x.setAttribute('aria-pressed',x===b));
+    cb(b.dataset.v,b.getAttribute('aria-pressed')==='true');
+  }));
+}
+
+/* ---------- step 3 ---------- */
+const mv3=Movie({svg:document.getElementById('p3'),slider:document.getElementById('t3'),out:document.getElementById('t3out'),
+  play:document.getElementById('play3'),showId:'show3',cs:CLASS,ghost:evolve(CLASS,0).rho,after:()=>{
+  document.getElementById('w-t').textContent=mv3.tau.toFixed(3);
+  document.getElementById('w-fs').textContent=(mv3.tau*FS).toFixed(2)+' fs';
+}});
+document.getElementById('quarter3').onclick=()=>{mv3.setPlay(false);let k=Math.round(mv3.tau/(TD/4))+1;if(k>12)k=0;mv3.tau=k*TD/4;mv3.draw()};
+document.getElementById('reset3').onclick=()=>{mv3.setPlay(false);mv3.tau=0;mv3.draw()};
+const PRED={a:'stay fixed',b:'slosh from side to side and return',c:'spread out and flatten for good',d:'slowly lose total probability'};
+document.getElementById('compare3').onclick=()=>{
+  const box=document.getElementById('cmp3'), p=R['Prediction'], per=parseExpr(R['Predicted period (ħ/E₁)']);
+  let h='';
+  h+=p?'<p>You predicted the density would <b>'+PRED[p]+'</b>. '+(p==='b'?'<span class="ok">That matches.</span>':'<span class="no">Compare that with what you see.</span>')+'</p>'
+      :'<p>You haven’t recorded a prediction in step 2.</p>';
+  h+='<p>The density sloshes with period T = 2πħ/(E₂ − E₁) = (2π/3) ħ/E₁ ≈ 2.09 ħ/E₁, which is 3.67 fs for an electron in a 1 nm well.</p>';
+  if(!isNaN(per))h+='<p>Your period: '+per.toFixed(3)+' ħ/E₁. '+(near(per,TD,0.02)?'<span class="ok">✓ Right.</span>':near(per,2*PI,0.02)?'<span class="no">That is when ψ itself returns (3T). The density returns sooner.</span>':'<span class="no">✗ Step through with “+ ¼ period” and count.</span>')+'</p>';
+  h+='<p class="small">Each stationary term alone would stay fixed. The motion comes entirely from the cross term between them.</p>';
+  box.innerHTML=h;box.hidden=false;done('watch');
+};
+
+/* ---------- step 4 ---------- */
+const meas=[];
+function measure(k){let last;for(let j=0;j<k;j++){last=Math.random()<C1*C1?1:2;meas.push(last)}
+  document.getElementById('mlast').textContent='Last result: E'+'₁₂'[last-1]+' = '+(last*last)+'E₁. The particle is now in φ'+'₁₂'[last-1]+'; measuring again gives the same value.';
+  draw4()}
+function draw4(){
+  const svg=document.getElementById('p4');svg.innerHTML='';
+  const K=4, bw=(X1-X0)/K, Yb=scaler(0,1,22,164), N=meas.length, cnt=[0,0,0,0,0];
+  meas.forEach(n=>cnt[n]++);
+  [0,.5,1].forEach(v=>{el(svg,'line',{x1:X0,y1:Yb(v),x2:X1,y2:Yb(v)},'stroke:var(--line);stroke-dasharray:3 5');txt(svg,X0-6,Yb(v)+4,String(v),'','end')});
+  el(svg,'line',{x1:X0,y1:164,x2:X1,y2:164},'stroke:var(--muted);stroke-width:1.5');
+  const P=[0,C1*C1,C2*C2,0,0];
+  for(let k=1;k<=K;k++){const f=N?cnt[k]/N:0, x=X0+bw*(k-1)+bw*.2, w=bw*.6;
+    el(svg,'rect',{x,y:Yb(f),width:w,height:Math.max(0,164-Yb(f)),rx:3},'fill:var(--chip);stroke:var(--psi);stroke-width:1.5');
+    if(P[k])el(svg,'line',{x1:x-5,y1:Yb(P[k]),x2:x+w+5,y2:Yb(P[k])},'stroke:var(--prob);stroke-width:3');
+    txt(svg,x+w/2,182,'E'+'₁₂₃₄'[k-1]+' = '+k*k+'E₁');
+    if(cnt[k])txt(svg,x+w/2,Yb(f)-6,String(cnt[k]),'font-size:11px;fill:var(--ink)')}
+  txt(svg,X1,14,'bars: fraction observed    orange: |cₙ|²','font-size:12px','end');
+  txt(svg,Xu(.5),202,'1.6E₁ lies between the bars: no single result equals it','font-size:12px');
+  document.getElementById('m-n').textContent=N;
+  document.getElementById('m-avg').textContent=N?(meas.reduce((s,n)=>s+n*n,0)/N).toFixed(3)+' E₁':'—';
+}
+[1,10,100,1000].forEach(k=>document.getElementById('m'+k).onclick=()=>measure(k));
+document.getElementById('mclear').onclick=()=>{meas.length=0;document.getElementById('mlast').textContent='';draw4()};
+document.getElementById('check4').onclick=()=>{
+  const p=parseExpr(R['Predicted P(E₂)']), s=R['One measurement gives 1.6 E₁?'], box=document.getElementById('cmp4');let h='';
+  h+=isNaN(p)?'<p>No P(E₂) recorded yet.</p>':'<p>P(E₂): you said '+p.toFixed(3)+'. '+(near(p,.2)?'<span class="ok">✓ |c₂|² = 1/5.</span>':'<span class="no">✗ It is |c₂|² = 1/5. Compare with the orange tick.</span>')+'</p>';
+  h+=!s?'<p>No answer recorded for the single measurement.</p>':'<p>'+(s==='no'?'<span class="ok">✓ Never.</span>':'<span class="no">✗ Never.</span>')+' Each result is E₁ or 4E₁. Only the average of many approaches 1.6E₁.</p>';
+  box.innerHTML=h;box.hidden=false;done('measure');
+};
+
+/* ---------- step 5 ---------- */
+let st5='cls';
+function cs5(){
+  if(st5==='par')return PAR;
+  if(st5==='cls')return CLASS;
+  const a=+document.getElementById('a5').value, d=+document.getElementById('d5').value*PI/180;
+  return [{n:1,re:Math.sqrt(Math.max(0,1-a*a)),im:0},{n:2,re:a*Math.cos(d),im:a*Math.sin(d)}].filter(c=>c.re||c.im);
+}
+const mv5=Movie({svg:document.getElementById('p5'),slider:document.getElementById('t5'),out:document.getElementById('t5out'),
+  play:document.getElementById('play5'),showId:'show5',cs:CLASS,ghost:evolve(CLASS,0).rho});
+function set5(){
+  mv5.cs=cs5();mv5.ghost=evolve(mv5.cs,0).rho;
+  const a=+document.getElementById('a5').value, d=+document.getElementById('d5').value;
+  document.getElementById('a5out').textContent=a.toFixed(3);document.getElementById('d5out').textContent=d+'°';
+  document.getElementById('two5').hidden=st5!=='two';
+  document.getElementById('eq5').textContent=st5==='cls'?'ψ(x, 0) = (2/√5) φ₁ + (1/√5) φ₂':st5==='par'?'ψ(x, 0) = A x(L − x) = Σ over odd n of (8√15/(nπ)³) φₙ'
+    :'ψ(x, 0) = '+Math.sqrt(Math.max(0,1-a*a)).toFixed(3)+' φ₁ + '+a.toFixed(3)+' e^(i·'+d+'°) φ₂';
+  document.getElementById('e-h').textContent=Hexp(mv5.cs).toFixed(3);
+  const svg=document.getElementById('b5');svg.innerHTML='';
+  const K=8, bw=(X1-X0)/K, Yb=scaler(0,1,14,112);
+  el(svg,'line',{x1:X0,y1:112,x2:X1,y2:112},'stroke:var(--muted);stroke-width:1.5');
+  [0,1].forEach(v=>txt(svg,X0-6,Yb(v)+4,String(v),'','end'));
+  for(let n=1;n<=K;n++){const c=mv5.cs.find(c=>c.n===n), p=c?c.re*c.re+c.im*c.im:0, x=X0+bw*(n-1)+bw*.2, w=bw*.6;
+    el(svg,'rect',{x,y:Yb(p),width:w,height:Math.max(0,112-Yb(p)),rx:3},'fill:var(--probfill);stroke:var(--prob);stroke-width:1.5');
+    txt(svg,x+w/2,130,'n = '+n);
+    if(p>5e-4)txt(svg,x+w/2,Yb(p)-5,p<.01?p.toFixed(4):p.toFixed(3),'font-size:11px;fill:var(--ink)')}
+  mv5.draw();
+}
+seg('st5',v=>{st5=v;mv5.tau=0;set5()});
+['a5','d5'].forEach(id=>document.getElementById(id).addEventListener('input',set5));
+document.getElementById('reset5').onclick=()=>{mv5.setPlay(false);mv5.tau=0;mv5.draw()};
+document.getElementById('rev5').onclick=()=>{mv5.setPlay(false);mv5.tau=2*PI;mv5.draw()};
+
+/* ---------- copy responses ---------- */
+document.getElementById('copyBtn').onclick=async()=>{
+  const lines=['Square well inquiry: my responses',''];const seen=new Set();
+  document.querySelectorAll('[data-r]').forEach(e=>{const k=e.dataset.r;if(seen.has(k))return;seen.add(k);
+    let v=R[k]||'';if(k==='Prediction'&&v)v=PRED[v];lines.push(k+': '+(v||'(blank)'))});
+  const text=lines.join('\n'), ta=document.getElementById('copyFallback'), btn=document.getElementById('copyBtn');
+  try{await navigator.clipboard.writeText(text);btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy my responses',2000)}
+  catch(e){ta.value=text;ta.hidden=false;ta.focus();ta.select();btn.textContent='Select and copy below'}
+};
+
+/* ---------- step navigation ---------- */
+const tabs=[...document.querySelectorAll('nav.steps button')];
+function show(id){
+  tabs.forEach(b=>{const on=b.getAttribute('aria-controls')===id;b.setAttribute('aria-selected',on);document.getElementById(b.getAttribute('aria-controls')).hidden=!on});
+  if(id!=='watch')mv3.setPlay(false);if(id!=='explore')mv5.setPlay(false);
+  try{history.replaceState(null,'','#'+id)}catch(e){}
+}
+function done(id){document.getElementById('t-'+id).classList.add('done')}
+tabs.forEach(b=>b.addEventListener('click',()=>show(b.getAttribute('aria-controls'))));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go==='watch')done('predict');show(b.dataset.go);document.querySelector('nav.steps').scrollIntoView({block:'nearest'})}));
+
+restore();draw1();draw2();mv3.draw();draw4();set5();
+const start=(location.hash||'').slice(1);if(document.getElementById('t-'+start))show(start);
+</script>
+
+</html>
