@@ -4,6 +4,12 @@ Materials from the PICUP Pittsburgh DICE 2026 session on building interactive te
 
 **Live site:** https://mpkuchera.github.io/pittsburgh-dice-2026/
 
+## Slides: Agentic AI Overview
+
+[`slides/`](slides/) · [view them live](https://mpkuchera.github.io/pittsburgh-dice-2026/slides/)
+
+How we got from chatbots to coding agents, today's main tools, and what it means for assessment. Adapted from slides by Larry Engelhardt (PICUP Atlanta DICE 2026) and used with his permission. Viewable in the browser, with a PDF copy in the same folder.
+
 ## Infinite square well inquiry
 
 [`square-well-inquiry/index.html`](square-well-inquiry/index.html) · [open it live](https://mpkuchera.github.io/pittsburgh-dice-2026/square-well-inquiry/)
@@ -32,3 +38,5 @@ The same lecture example built with OpenAI's Codex, for comparison. It walks thr
 ## License
 
 Both square well activities are dedicated to the public domain under [CC0 1.0](LICENSE). You may copy, modify and reuse them for any purpose, without asking.
+
+The slides in [`slides/`](slides/) are **not** covered by CC0. They are adapted from Larry Engelhardt's slides and shared here with his permission; please ask before reusing them.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic AI Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,700&display=swap" rel="stylesheet">
+<style>
+/* Same graph-paper identity as the rest of the site; the slide itself is the only framed object. */
+:root{--paper:#f6f7fb;--grid:#e4e8f1;--surface:#fff;--ink:#1c2333;--muted:#596379;--line:#cdd3e0;--psi:#3d3fb8;
+  --serif:"Source Serif 4",Georgia,serif;--sans:"Atkinson Hyperlegible",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root{--paper:#11141c;--grid:#1b202d;--surface:#181c27;--ink:#e7eaf3;--muted:#9ba4b9;--line:#2d3446;--psi:#9497ff;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background-color:var(--paper);font:17px/1.55 var(--sans);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;
+  padding:0 max(16px,env(safe-area-inset-left))}
+main{max-width:1000px;margin:0 auto;padding:28px 0 48px;display:grid;gap:14px}
+a{color:var(--psi)}
+.back{font-size:.92rem}
+h1{margin:0;font:700 clamp(1.7rem,5vw,2.3rem)/1.15 var(--serif)}
+.credit{margin:0;color:var(--muted);font-size:.95rem}
+.stage{position:relative;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;aspect-ratio:16/9;touch-action:pan-y;user-select:none}
+.stage img{display:block;width:100%;height:100%;object-fit:contain}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-size:.95rem;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible,.thumbs button:focus-visible{outline:3px solid var(--psi);outline-offset:2px}
+.count{font-variant-numeric:tabular-nums;color:var(--muted)}
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}
+.thumbs button{flex:0 0 auto;width:120px;padding:0;border:2px solid transparent;border-radius:6px;background:none;cursor:pointer;opacity:.7}
+.thumbs button[aria-current="true"]{border-color:var(--psi);opacity:1}
+.thumbs img{display:block;width:100%;border-radius:4px}
+.notes{display:grid;gap:6px;font-size:.95rem}
+.notes p{margin:0;max-width:72ch}
+.small{color:var(--muted);font-size:.88rem}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← Pittsburgh DICE 2026</a>
+  <h1>Agentic AI Overview</h1>
+  <p class="credit">Adapted from slides by Larry Engelhardt (PICUP Atlanta DICE 2026), used with permission.</p>
+
+  <div class="stage" id="stage"><img id="slide" src="slide-01.png" alt=""></div>
+  <div class="bar">
+    <button class="btn" id="prev">← Previous</button>
+    <span class="count" id="count" aria-live="polite"></span>
+    <button class="btn" id="next">Next →</button>
+  </div>
+  <div class="thumbs" id="thumbs" aria-label="All slides"></div>
+
+  <div class="notes">
+    <p><b>Links from the slides:</b> Larry Engelhardt's full assessment framework, <a href="https://arxiv.org/abs/2607.15518">arxiv.org/abs/2607.15518</a> · MIT's report on AI in teaching and learning, <a href="https://aiandeducation.mit.edu/report/">aiandeducation.mit.edu/report</a></p>
+    <p class="small">Use the arrow keys or swipe to move between slides. <a href="agentic-ai-overview.pdf">Download the PDF</a> if you'd like a copy. These slides are not covered by the site's CC0 dedication; please ask the authors before reusing them.</p>
+  </div>
+</main>
+<script>
+const ALT=[
+  "Title slide: PICUP Pittsburgh 2026, Agentic AI Overview. Adapted from slides by Larry Engelhardt.",
+  "Three companies at the center of today's AI: Google (1998), OpenAI (2015) and Anthropic (2021), with how each started and what each makes.",
+  "Two breakthroughs in the same five years: AI for scientific discovery (AlphaGo, AlphaFold, the 2024 Chemistry Nobel) and large language models (the Transformer, GPT, ChatGPT). The 2024 Physics Nobel went to Hopfield and Hinton for the Hopfield network and the Boltzmann machine.",
+  "Today: AI agents that write and run code. A chatbot answers questions; an agentic coding tool reads the project, edits files, runs code and checks its work, repeating until done.",
+  "The big three platforms and models, as of November 2026: Claude Code with Fable, Opus, Sonnet and Haiku; Codex with Astra, Sol, Terra and Luna; Antigravity with Gemini 4 Argon and Gemini 3.7 Flash.",
+  "The same table with a smartness scale from Whoa! to Fast and cheap, and four ways to use Claude Code or Codex: web browser, command line, desktop app and VS Code extension.",
+  "Beyond the big three: Meta's Muse Code, Amazon's Kiro, GitHub Copilot, Cursor, Devin and Kilo Code. The key choice: one company's agent and model, or an agent where you pick the model.",
+  "The artifact no longer certifies the learner: polished work is no longer sufficient evidence of individual understanding. A response: a 5 to 10 minute supervised defense of one AI-vulnerable assignment.",
+  "MIT's Ad Hoc Committee on AI Use in Teaching, Learning, and Research Training: report of August 13, 2026, at aiandeducation.mit.edu/report."
+];
+const N=ALT.length, src=i=>'slide-'+String(i+1).padStart(2,'0')+'.png';
+const img=document.getElementById('slide'), count=document.getElementById('count'), prev=document.getElementById('prev'), next=document.getElementById('next'), thumbs=document.getElementById('thumbs');
+let cur=0;
+ALT.forEach((a,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Slide '+(i+1));
+  b.innerHTML='<img src="'+src(i)+'" alt="" loading="lazy">';b.onclick=()=>go(i);thumbs.appendChild(b)});
+function go(i){
+  cur=Math.max(0,Math.min(N-1,i));
+  img.src=src(cur);img.alt='Slide '+(cur+1)+' of '+N+'. '+ALT[cur];
+  count.textContent=(cur+1)+' / '+N;prev.disabled=cur===0;next.disabled=cur===N-1;
+  [...thumbs.children].forEach((b,j)=>b.setAttribute('aria-current',j===cur));
+  thumbs.children[cur].scrollIntoView({block:'nearest',inline:'nearest'});
+  try{history.replaceState(null,'','#'+(cur+1))}catch(e){}
+  if(cur<N-1){const p=new Image();p.src=src(cur+1)}
+}
+prev.onclick=()=>go(cur-1);next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(cur+1)}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1)}
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(N-1)});
+let x0=null;const stage=document.getElementById('stage');
+stage.addEventListener('pointerdown',e=>{x0=e.clientX});
+stage.addEventListener('pointerup',e=>{if(x0===null)return;const dx=e.clientX-x0;x0=null;
+  if(Math.abs(dx)>40)go(cur+(dx<0?1:-1));else go(cur+(e.offsetX>stage.clientWidth/2?1:-1))});
+go((parseInt(location.hash.slice(1),10)||1)-1);
+</script>
+</body>
+</html>
